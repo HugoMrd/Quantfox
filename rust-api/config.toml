@@ -1,0 +1,10 @@
+[server]
+host = "0.0.0.0"
+port = 8000
+
+[python_api]
+url = "http://python-api:8001"
+timeout_seconds = 30
+
+[logging]
+level = "info"
