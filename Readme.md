@@ -76,7 +76,7 @@ ORDER BY date
    This command will:
    - Build the Rust and Python Docker images
    - Start PostgreSQL with automatic schema initialization
-   - Seed the database with sample price data (Jan 1-5, 2025)
+   - Seed the database with sample price data (Jan 1-31, 2025)
    - Start Redis as the Celery broker
    - Launch the Python API and Celery worker
    - Launch the Rust API (public endpoint)
@@ -85,7 +85,7 @@ ORDER BY date
 
 4. **Test the API**
    ```bash
-   curl "http://localhost:8000/prices/average?start_date=2025-01-01&end_date=2025-01-05"
+   curl "http://localhost:8000/prices/average?start_date=2025-01-01&end_date=2025-01-31"
    ```
 
 ## API Reference
@@ -128,9 +128,9 @@ GET /prices/average
 ```json
 {
   "data": [
-    {"date": "2024-01-01", "average_price": 98.45},
-    {"date": "2024-01-02", "average_price": 102.33},
-    {"date": "2024-01-03", "average_price": 99.87}
+    {"date": "2025-01-01", "average_price": 101.05},
+    {"date": "2025-01-02", "average_price": 102.45},
+    {"date": "2025-01-03", "average_price": 99.43}
   ]
 }
 ```
@@ -160,24 +160,24 @@ All error responses follow the same structure:
 
 **Valid request:**
 ```bash
-curl "http://localhost:8000/prices/average?start_date=2024-02-01&end_date=2024-02-28"
+curl "http://localhost:8000/prices/average?start_date=2025-01-01&end_date=2025-01-31"
 ```
 
 **Missing parameter (400):**
 ```bash
-curl "http://localhost:8000/prices/average?start_date=2024-01-01"
+curl "http://localhost:8000/prices/average?start_date=2025-01-01"
 # Response: {"error":{"code":"MISSING_PARAMETER","message":"Missing required parameter: end_date"}}
 ```
 
 **Invalid date format (400):**
 ```bash
-curl "http://localhost:8000/prices/average?start_date=01-01-2024&end_date=2024-01-31"
+curl "http://localhost:8000/prices/average?start_date=01-01-2025&end_date=2025-01-31"
 # Response: {"error":{"code":"INVALID_DATE_FORMAT","message":"Invalid date format for start_date. Expected ISO 8601 format (YYYY-MM-DD)"}}
 ```
 
 **Invalid date range (400):**
 ```bash
-curl "http://localhost:8000/prices/average?start_date=2024-01-31&end_date=2024-01-01"
+curl "http://localhost:8000/prices/average?start_date=2025-01-31&end_date=2025-01-01"
 # Response: {"error":{"code":"INVALID_DATE_RANGE","message":"start_date must be before or equal to end_date"}}
 ```
 
@@ -235,11 +235,18 @@ The database is automatically initialized and seeded when Docker Compose starts.
 
 ## Running Tests
 
-### Python tests
+### Python unit tests (no Docker required)
 ```bash
 cd python-api
-pip install -e ".[dev]"
-pytest
+pip install celery redis fastapi httpx psycopg2-binary pydantic tomli pytest
+python -m pytest tests/test_validation.py -v
+```
+
+### Python integration tests (requires Docker)
+```bash
+docker compose up -d
+cd python-api
+python -m pytest tests/test_integration.py -v
 ```
 
 ### Rust tests
@@ -275,7 +282,8 @@ Quantfox/
     │   ├── database.py        # PostgreSQL queries
     │   └── errors.py          # Error handling
     └── tests/
-        └── test_validation.py # Unit tests
+        ├── test_validation.py  # Unit tests (25 tests)
+        └── test_integration.py # Integration tests (20 tests)
 ```
 
 ## Stopping Services
